@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<title>ورقة الإجابة</title>
+<style>
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+
+  body {
+    font-family: 'Noto Naskh Arabic', 'Segoe UI', Arial, sans-serif;
+    background: #aaa;
+    color: #111;
+    direction: rtl;
+  }
+
+  /* ── A4 page ── */
+  .sheet {
+    position: relative;
+    width: 210mm;
+    height: 297mm;
+    margin: 0 auto;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Corner anchors (large, 4 corners) ── */
+  .anchor {
+    position: absolute;
+    background: #000;
+    z-index: 20;
+  }
+  .anchor.corner {
+    width: 12mm; height: 12mm;
+  }
+  .anchor.tl { top:4mm;    left:4mm;   }
+  .anchor.tr { top:4mm;    right:4mm;  }
+  .anchor.bl { bottom:4mm; left:4mm;   }
+  .anchor.br { bottom:4mm; right:4mm;  }
+
+  /* ── Mid-edge anchors (2, left+right centre) ── */
+  .anchor.mid {
+    width: 7mm; height: 7mm;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .anchor.ml { left:0; }
+  .anchor.mr { right:0; }
+
+  /* ── Content ── */
+  .content {
+    flex: 1;
+    padding: 16mm 18mm 8mm;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  /* ── Title ── */
+  .title {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    border-bottom: 3px double #222;
+    padding-bottom: 7px;
+    margin-bottom: 2px;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .meta {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .meta-row { display:flex; gap:12px; }
+
+  .field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .field.wide { flex: 2; }
+
+  .field label {
+    font-size: 9px;
+    font-weight: 800;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .field .val {
+    border-bottom: 2px solid #222;
+    padding: 3px 5px;
+    font-size: 14px;
+    font-weight: 700;
+    min-height: 24px;
+    line-height: 1.4;
+  }
+
+  /* ── QR ── */
+  .qrs { display:flex; gap:10px; align-items:center; }
+  .qrbox {
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+  }
+  .qrbox img  { width:20mm; height:20mm; display:block; }
+  .qrbox span {
+    font-size:8.5px; color:#444; font-weight:800;
+    text-transform:uppercase; letter-spacing:0.4px;
+  }
+
+  /* ── Legend bar ── */
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    font-weight: 600;
+    border-top: 2px solid #aaa;
+    border-bottom: 2px solid #aaa;
+    padding: 5px 2px;
+    background: #f8f8f8;
+  }
+  .legend .ltitle { font-size:12px; font-weight:900; }
+  .legend-sample {
+    display: flex; align-items:center; gap: 4px;
+  }
+  .legend .hint {
+    font-size: 9.5px; color: #555; font-weight:500;
+    margin-right: auto;
+  }
+
+  /* ── Bubble (in legend) ── */
+  .bubble-sm {
+    display:inline-block;
+    width:16px; height:16px;
+    border-radius:50%;
+    border:2px solid #111;
+    background:#fff;
+    vertical-align:middle;
+  }
+  .bubble-sm.filled { background:#111; }
+
+  /* ── Question grid ── */
+  .qg {
+    flex: 1;
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+  }
+
+  .qc {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0 14px;
+    border-left: 2px solid #ccc;
+  }
+  .qc:last-child { border-left: none; }
+
+  /* ── Column bubble-zone bar (top + bottom of each column) ── */
+  /* Mirrors the .qr flex layout so the black bar aligns exactly over .bs  */
+  /* and the transparent spacer aligns over .qn.  The bar's far edge from  */
+  /* .qn is the precise bubble/number boundary the OMR detector uses.      */
+  .col-anchor {
+    display: flex;
+    align-items: stretch;
+    padding: 2px 0;
+  }
+  .col-num-spacer {
+    min-width: 28px;
+    flex-shrink: 0;
+  }
+  .col-bubble-bar {
+    flex: 1;
+    height: 5mm;
+    background: #000;
+    border-radius: 1px;
+  }
+
+  /* ── Column choice-letter header ── */
+  .col-header {
+    display: flex;
+    align-items: center;
+    padding: 3px 0 2px;
+    border-bottom: 1.5px solid #999;
+    margin-bottom: 1px;
+    background: #f4f4f4;
+  }
+
+  .ch-spacer {
+    min-width: 28px;
+    flex-shrink: 0;
+  }
+
+  .ch-lbl {
+    flex: 1;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 900;
+    color: #444;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Single question row ── */
+  .qr {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    min-height: 30px;
+  }
+  .qr-phantom {
+    border-bottom: none;
+    visibility: hidden;
+  }
+  .col-header-phantom {
+    visibility: hidden;
+  }
+
+  .qn {
+    font-size: 16px;
+    font-weight: 900;
+    min-width: 28px;
+    text-align: left;
+    color: #000;
+    flex-shrink: 0;
+    line-height: 1;
+    padding-left: 3px;
+    padding-left: 6px;
+  }
+
+  .bs {
+    flex: 1;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border-right: 3px solid #333;
+    padding-right: 7px;
+  }
+
+  /* ── Bubble ── */
+  .bubble {
+    display: inline-block;
+    width:  26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid #111;
+    background: #fff;
+    flex-shrink: 0;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center;
+    font-size: 9px;
+    font-weight: 600;
+    color: #777;
+    border-top: 1px solid #ccc;
+    padding: 4px 0 2px;
+    letter-spacing: 0.3px;
+  }
+
+  @media print {
+    body { background:none; }
+    .sheet { margin:0; box-shadow:none; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <!-- 4 corner anchors -->
+  <div class="anchor corner tl"></div>
+  <div class="anchor corner tr"></div>
+  <div class="anchor corner bl"></div>
+  <div class="anchor corner br"></div>
+
+  <!-- 2 mid-edge anchors -->
+  <div class="anchor mid ml"></div>
+  <div class="anchor mid mr"></div>
+
+  <div class="content">
+
+    <!-- Title -->
+    <div class="title">ورقة الإجابة</div>
+
+    <!-- Header -->
+    <div class="header">
+      <div class="meta">
+        <div class="meta-row">
+          <div class="field wide">
+            <label>اسم الطالب</label>
+            <div class="val">Ahmed Ali</div>
+          </div>
+          <div class="field">
+            <label>رقم الطالب</label>
+            <div class="val">STU-20240001</div>
+          </div>
+        </div>
+        <div class="meta-row">
+          <div class="field">
+            <label>رمز الامتحان</label>
+            <div class="val">EXAM-2024-MATH-01</div>
+          </div>
+          <div class="field">
+            <label>الفصل</label>
+            <div class="val">Grade 10-A</div>
+          </div>
+        </div>
+      </div>
+      <div class="qrs">
+        <div class="qrbox">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAACvAQAAAACj6bPYAAABKElEQVR4nO1XOY7DMAwcRgG8wBbaH8g/UX5m7c/knzg/sDsZsTwLMUcTN9uxyDQmWA1GHA4txAF4OuoCn/YBuOlHqIBi2E1J1Smz+rX0Y1Ke2dpbLiIJbgnjBagivdlhC9kKk6N29dfeBpP3ticTXPETAEdO1giuIiJqEoCtvlgiCL4wA8OjNLRmwK2bQx6EBYjk1nGK5ggiqoKBaXcFwZSCZ2ANUy9yOyOMdLdvTRM7BE9ommXszb5RalcWaybZ4KeYhMUzDy2ZQ7aUxXh6uN0MMe2ujaKlGcTrmil+ipTmYpvXTMMotVt+WmXwmqn+2ke6VQMF1vYgdFEH3p/Y1KI+PYvqZ4ypdgXhNxlTkCQfCkJhzCTr/ZpRBUWT2dIMyue38w3/U/APqgrHw5oo57AAAAAASUVORK5CYII=" alt="Student QR"/>
+          <span>الطالب</span>
+        </div>
+        <div class="qrbox">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAACvAQAAAACj6bPYAAABJUlEQVR4nO1XsW3EMAw8Sg/YnbOBfhMlk2QU6TeTR8gGzgZyEcAGLPFB650AiZt0LJ4NJVaH451IEeMk2JxVgWf5JHjbE/EyTAitFqoqqjpmZpS+4WTmpK2XM1GEXWafgEJ0VSu2z1ctSM7KpdeC5FfwtmtQxDf5PXHSZBIcLt667JJCF4OPWOC+z1UPQIPSz9cxGnQZYxQpild0tXiYgGo5wzNtGHRp0DyyXclNuPGlvTZ6AELEBwQx89RuTpUGLwCGj3cigODfyH5Jw3Ux2EKk6MXMsjNUndsMpwCrrcX4mSRZrnY3szKAGQiPScKSVDFojoOd3RjI2EXZM2OOQ+nhEmqhF3eLWrcZNA2qcrEBViIiGcmeI607kYoYpOe380/8j8E7hCzEmA4X3rsAAAAASUVORK5CYII=" alt="Exam QR"/>
+          <span>الامتحان</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <span class="ltitle">دليل:</span>
+      <span class="legend-sample">
+        <span class="bubble-sm"></span>&nbsp;فارغ
+      </span>
+      &nbsp;&nbsp;
+      <span class="legend-sample">
+        <span class="bubble-sm filled"></span>&nbsp;المختارة
+      </span>
+      <span class="hint">املأ الدائرة كاملاً بقلم غامق</span>
+    </div>
+
+    <!-- Grid -->
+    <div class="qg"><div class="qc"><div class="col-anchor"><span class="col-num-spacer"></span><span class="col-bubble-bar"></span></div><div class="col-header"><span class="ch-spacer"></span><span class="ch-lbl">ا</span><span class="ch-lbl">ب</span><span class="ch-lbl">ج</span><span class="ch-lbl">د</span><span class="ch-lbl">ه</span></div><div class="qr"><span class="qn">1</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="qr"><span class="qn">2</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="qr"><span class="qn">3</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="qr"><span class="qn">4</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="qr"><span class="qn">5</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="col-header"><span class="ch-spacer"></span><span class="ch-lbl">ا</span><span class="ch-lbl">ب</span><span class="ch-lbl">ج</span><span class="ch-lbl">د</span><span class="ch-lbl">ه</span></div><div class="qr"><span class="qn">6</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="qr"><span class="qn">7</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="qr"><span class="qn">8</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="qr"><span class="qn">9</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="qr"><span class="qn">10</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="col-anchor"><span class="col-num-spacer"></span><span class="col-bubble-bar"></span></div></div><div class="qc"><div class="col-anchor"><span class="col-num-spacer"></span><span class="col-bubble-bar"></span></div><div class="col-header"><span class="ch-spacer"></span><span class="ch-lbl">ا</span><span class="ch-lbl">ب</span><span class="ch-lbl">ج</span><span class="ch-lbl">د</span><span class="ch-lbl">ه</span></div><div class="qr"><span class="qn">11</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="qr"><span class="qn">12</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="qr"><span class="qn">13</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="qr"><span class="qn">14</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="qr"><span class="qn">15</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="col-header"><span class="ch-spacer"></span><span class="ch-lbl">ا</span><span class="ch-lbl">ب</span><span class="ch-lbl">ج</span><span class="ch-lbl">د</span><span class="ch-lbl">ه</span></div><div class="qr"><span class="qn">16</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="qr"><span class="qn">17</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="qr"><span class="qn">18</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="qr"><span class="qn">19</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="qr"><span class="qn">20</span><span class="bs"><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span><span class="bubble"></span></span></div><div class="col-anchor"><span class="col-num-spacer"></span><span class="col-bubble-bar"></span></div></div></div>
+
+    <!-- Footer -->
+    <div class="footer">ورقة إجابة OMR  |  20 سؤال  |  5 خيارات  |  A4</div>
+
+  </div>
+</div>
+</body>
+</html>

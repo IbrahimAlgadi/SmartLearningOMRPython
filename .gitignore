@@ -1,0 +1,59 @@
+# ── Datasets ──────────────────────────────────────────────────────────────────
+dataset/
+dataset_v2/
+dataset_v2_preview/
+dataset_v2_preview2/
+dataset_v3/
+dataset_v3_test/
+
+# ── Detection output folders ──────────────────────────────────────────────────
+detected-*/
+detect_8_stage_*/
+detect_v2*/
+detect_v3*/
+debug_output/
+_tmp/
+
+# ── Log files ─────────────────────────────────────────────────────────────────
+*.log
+result.json
+
+# ── Trained model weights (large binaries) ────────────────────────────────────
+*.pt
+*.onnx
+models/
+runs/
+web_runs/
+
+# ── Raw test / sample images in project root ──────────────────────────────────
+ans*.jpeg
+ans*.png
+ar-student-answer*.jpeg
+ar-student-answer*.png
+student-answer.png
+test_blank_ar.png
+
+# ── Generated PDFs ────────────────────────────────────────────────────────────
+*.pdf
+
+# ── Python environment & cache ────────────────────────────────────────────────
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── OS / editor noise ─────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+*.orig

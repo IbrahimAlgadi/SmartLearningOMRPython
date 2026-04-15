@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a6fc4">
+  <title>Results — OMR Auto-Marking</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <header>
+    <h1>OMR Auto-Marking</h1>
+    <p>Run: <code>{{ run_id }}</code></p>
+  </header>
+
+  {% if status == "ERROR" %}
+  <!-- ── Error ─────────────────────────────────────────────────── -->
+  <div class="card">
+    <h2>Processing Failed</h2>
+    <div class="error-box">
+      {{ error.error if error else "Unknown error" }}
+    </div>
+  </div>
+
+  {% if debug_images %}
+  <div class="card">
+    <p class="section-title">Debug Images</p>
+    <div class="debug-gallery">
+      {% for img in debug_images %}
+      <div class="debug-item">
+        <img src="{{ img.url }}" alt="{{ img.label }}" onclick="openLightbox(this.src)">
+        <p>{{ img.label }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <!-- ── Success ────────────────────────────────────────────────── -->
+
+  {% set r = result %}
+  {% set conf = r.confidence_metrics %}
+
+  <!-- Summary -->
+  <div class="card">
+    <div class="result-score">{{ r.answered }} / {{ r.total_questions }}</div>
+    <div class="result-meta">
+      Template: <strong>{{ conf.template_id }}</strong>
+      &nbsp;·&nbsp; {{ r.processing_metrics.time_ms }} ms
+      &nbsp;·&nbsp;
+      {% if r.valid %}
+        <span class="badge badge-ok">Valid</span>
+      {% else %}
+        <span class="badge badge-warn">Check flags</span>
+      {% endif %}
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-box">
+        <div class="num num-ok">{{ r.answered }}</div>
+        <div class="lbl">Answered</div>
+      </div>
+      <div class="stat-box">
+        <div class="num {% if r.unanswered|length > 0 %}num-warn{% else %}num-ok{% endif %}">
+          {{ r.unanswered|length }}
+        </div>
+        <div class="lbl">Unanswered</div>
+      </div>
+      <div class="stat-box">
+        <div class="num {% if r.double_marked|length > 0 %}num-danger{% else %}num-ok{% endif %}">
+          {{ r.double_marked|length }}
+        </div>
+        <div class="lbl">Double-marked</div>
+      </div>
+      <div class="stat-box">
+        <div class="num {% if r.ambiguous|length > 0 %}num-warn{% else %}num-ok{% endif %}">
+          {{ r.ambiguous|length }}
+        </div>
+        <div class="lbl">Ambiguous</div>
+      </div>
+    </div>
+
+    {% if r.student_code %}
+    <p style="margin-top:12px;font-size:.85rem;color:var(--clr-muted);">
+      Student: <strong>{{ r.student_code }}</strong>
+      {% if r.exam_code %}&nbsp;·&nbsp; Exam: <strong>{{ r.exam_code }}</strong>{% endif %}
+    </p>
+    {% endif %}
+  </div>
+
+  <!-- Flags -->
+  {% if r.unanswered or r.double_marked or r.ambiguous or r.low_conf_rows %}
+  <div class="card">
+    <p class="section-title">Flags</p>
+    {% if r.double_marked %}
+    <p style="font-size:.85rem;margin-bottom:4px;"><strong>Double-marked:</strong></p>
+    <div class="flag-list">
+      {% for q in r.double_marked %}<span class="flag-tag danger">Q{{ q }}</span>{% endfor %}
+    </div>
+    {% endif %}
+    {% if r.ambiguous %}
+    <p style="font-size:.85rem;margin:10px 0 4px;"><strong>Ambiguous:</strong></p>
+    <div class="flag-list">
+      {% for q in r.ambiguous %}<span class="flag-tag">Q{{ q }}</span>{% endfor %}
+    </div>
+    {% endif %}
+    {% if r.unanswered %}
+    <p style="font-size:.85rem;margin:10px 0 4px;"><strong>Unanswered:</strong></p>
+    <div class="flag-list" style="max-height:100px;overflow-y:auto;">
+      {% for q in r.unanswered %}<span class="flag-tag">Q{{ q }}</span>{% endfor %}
+    </div>
+    {% endif %}
+    {% if r.low_conf_rows %}
+    <p style="font-size:.85rem;margin:10px 0 4px;"><strong>Low confidence rows:</strong></p>
+    <div class="flag-list">
+      {% for q in r.low_conf_rows %}<span class="flag-tag">Q{{ q }}</span>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Marked image -->
+  {% if marked_image_url %}
+  <div class="card">
+    <p class="section-title">Marked Sheet</p>
+    <div class="marked-img-wrap">
+      <img src="{{ marked_image_url }}" alt="Marked answer sheet"
+           onclick="openLightbox(this.src)" style="cursor:pointer;">
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Answer table -->
+  <div class="card">
+    <p class="section-title">Answer Table</p>
+    <div class="answer-table-scroll">
+      <table class="answer-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Answer</th>
+            <th>Note</th>
+            <th>Confidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for qnum in range(1, r.total_questions + 1) %}
+          {% set qkey = qnum | string %}
+          {% set det = r.answer_details.get(qkey) %}
+          <tr>
+            <td>{{ qnum }}</td>
+            <td>
+              {% if r.answers.get(qkey) %}
+                <strong>{{ r.answers[qkey] }}</strong>
+              {% else %}
+                <span style="color:var(--clr-muted)">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if det %}
+                {% if det.note == 'blank' %}
+                  <span class="note-blank">blank</span>
+                {% elif det.note == 'double_mark' %}
+                  <span class="note-double">double</span>
+                {% elif det.note == 'ambiguous' %}
+                  <span class="note-ambiguous">ambiguous</span>
+                {% else %}
+                  <span style="color:var(--clr-success)">ok</span>
+                {% endif %}
+              {% endif %}
+            </td>
+            <td>
+              {% if det %}
+                {{ "%.0f"|format(det.confidence * 100) }}%
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Debug gallery -->
+  {% if debug_images | length > 1 %}
+  <div class="card">
+    <p class="section-title">Debug Images</p>
+    <div class="debug-gallery">
+      {% for img in debug_images %}
+      {% if img.name != '10_answered.jpg' %}
+      <div class="debug-item">
+        <img src="{{ img.url }}" alt="{{ img.label }}" onclick="openLightbox(this.src)">
+        <p>{{ img.label }}</p>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% endif %}
+
+  <!-- Actions -->
+  <div class="link-row" style="margin-top:4px;">
+    <a href="/api/runs/{{ run_id }}" target="_blank">Raw JSON result</a>
+  </div>
+  <a href="/" class="btn btn-secondary" style="display:block;text-align:center;text-decoration:none;margin-top:16px;">
+    ← Scan another sheet
+  </a>
+
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox" onclick="closeLightbox()">
+  <span id="lightbox-close" onclick="closeLightbox()">&times;</span>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<script>
+function openLightbox(src) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').classList.add('active');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('active');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<title>ورقة الإجابة</title>
+<style>
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+
+  body {
+    font-family: 'Noto Naskh Arabic', 'Segoe UI', Arial, sans-serif;
+    font-size: 11px;
+    background: #bbb;
+    color: #111;
+    direction: rtl;
+  }
+
+  /* ── A4 sheet ── */
+  .sheet {
+    position: relative;
+    width: 210mm;
+    height: 297mm;
+    margin: 0 auto;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Corner fiducials ── */
+  .anchor {
+    position: absolute;
+    width: 11mm; height: 11mm;
+    background: #000;
+    z-index: 10;
+  }
+  .anchor.tl { top:5mm;    left:5mm;   }
+  .anchor.tr { top:5mm;    right:5mm;  }
+  .anchor.bl { bottom:5mm; left:5mm;   }
+  .anchor.br { bottom:5mm; right:5mm;  }
+
+  /* ── Content ── */
+  .content {
+    flex: 1;
+    padding: 14mm 20mm 8mm;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  /* ── Title ── */
+  .title {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    border-bottom: 3px double #222;
+    padding-bottom: 6px;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .meta { flex:1; display:flex; flex-direction:column; gap:5px; }
+
+  .meta-row { display:flex; gap:10px; }
+
+  .field {
+    flex:1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .field.wide { flex:2; }
+
+  .field label {
+    font-size: 7.5px;
+    font-weight: 700;
+    color: #777;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .field .val {
+    border-bottom: 1.5px solid #333;
+    padding: 2px 4px;
+    font-size: 12px;
+    font-weight: 600;
+    min-height: 19px;
+    line-height: 1.4;
+  }
+
+  /* ── QR section ── */
+  .qrs { display:flex; gap:8px; align-items:center; }
+
+  .qrbox {
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+  }
+  .qrbox img  { width:17mm; height:17mm; display:block; }
+  .qrbox span {
+    font-size:7.5px; color:#555; font-weight:700;
+    text-transform:uppercase; letter-spacing:0.3px;
+  }
+
+  /* ── Legend / instructions bar ── */
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 9px;
+    border-top: 1.5px solid #bbb;
+    border-bottom: 1.5px solid #bbb;
+    padding: 3px 0;
+    background: #fafafa;
+  }
+  .legend .ltitle {
+    font-weight: 800;
+    font-size: 9.5px;
+  }
+  .legend .hint {
+    color: #555;
+    margin-right: auto;
+    font-size: 8.5px;
+  }
+
+  /* ── Question grid ── */
+  .qg {
+    flex: 1;
+    display: flex;
+    gap: 0;
+    align-items: flex-start;
+  }
+
+  .qc {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0 3px;
+    border-left: 1px dashed #ddd;
+  }
+  .qc:last-child {
+    border-left: none;
+  }
+
+  /* ── Single question row ── */
+  .qr {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1.6px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .qn {
+    font-size: 11.5px;
+    font-weight: 800;
+    min-width: 23px;
+    text-align: left;
+    color: #111;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .bs {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  /* ── Bubble + label pair ── */
+  .bw {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  .bubble {
+    display: inline-block;
+    width:  14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1.8px solid #111;
+    background: #fff;
+    flex-shrink: 0;
+  }
+
+  .bubble-filled {
+    background: #111;
+  }
+
+  .bl {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #222;
+    line-height: 1;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center;
+    font-size: 8px;
+    color: #888;
+    border-top: 1px solid #ccc;
+    padding: 3px 0;
+  }
+
+  @media print {
+    body { background:none; }
+    .sheet { margin:0; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="anchor tl"></div>
+  <div class="anchor tr"></div>
+  <div class="anchor bl"></div>
+  <div class="anchor br"></div>
+
+  <div class="content">
+
+    <div class="title">ورقة الإجابة</div>
+
+    <div class="header">
+      <div class="meta">
+        <div class="meta-row">
+          <div class="field wide">
+            <label>اسم الطالب</label>
+            <div class="val">Ahmed Ali</div>
+          </div>
+          <div class="field">
+            <label>رقم الطالب</label>
+            <div class="val">STU-20240001</div>
+          </div>
+        </div>
+        <div class="meta-row">
+          <div class="field">
+            <label>رمز الامتحان</label>
+            <div class="val">EXAM-2024-MATH-01</div>
+          </div>
+          <div class="field">
+            <label>الفصل</label>
+            <div class="val">Grade 10-A</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="qrs">
+        <div class="qrbox">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAACWAQAAAAAUekxPAAAA80lEQVR4nOVWMQ4CMQxz2u7hBzyl9zN0Pys/SkekIqP0QEIcI2SADBm8uE6cpEK8xjXtIOBXMNA8Z3pMoI6gt1Rn7Evpi7NbXA1EFuh6OQBdSnjts32fY4/1U9lhz5E+jBW3FlC0oQNKz+nDHOk9dhYR9xVwFZFD1Bw9YjM2yZA5Aq1mq5kNSlodGsfrjGRmG9pynF6MOUSu2rzUI6i/jbZ1uQ0l4uqMWd5Gq5yqR6SfDVDXG9lf+D2apFZH8D2CH4XLcf0Sx/s5gjsZrjfy/s7Q9U6qLVhvnsvKV1YK4uVcVjn0n4O7n7ctvalOAbzyZ//YG4tLs4w0t1NaAAAAAElFTkSuQmCC" alt="Student QR"/>
+          <span>الطالب</span>
+        </div>
+        <div class="qrbox">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAACWAQAAAAAUekxPAAAA9ElEQVR4nOVWO27FMAyj4gAZHaAHko+ud5TcQN4VsJDboWjWVkPLwTC46EeZFuI77u1BAX+FAz3PRgvoIjSKclGSmGNFZ6ax1cSFyEC3w4Epe3nv7/P3Yzy5OZ7cV2w/zO0pLWDvvN9s78Ss1bNr80o9g5+wFPNCFNWrWSzZXOkavSwuAohOdDbPNKJQz8clgdd9rm3aCuKCtHyyXGPdW9l8adEtb93QrU5XH/AcceZQtkeeZ6PRFb2wz55+1Lj8f6k6Kv1ojtzfa7QiH0S2F5q+v5pcWW8i60VMadeo9qM95yunVvnvS0Qwx0FrdfOVf/aPfQc+O6inMC1V6AAAAABJRU5ErkJggg==" alt="Exam QR"/>
+          <span>الامتحان</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span class="ltitle">دليل:</span>
+      <span class="bw"><span class="bubble"></span><span class="bl">= فارغ</span></span>&nbsp;&nbsp;<span class="bw"><span class="bubble bubble-filled"></span><span class="bl">= الإجابة المختارة</span></span>
+      <span class="hint">املأ الدائرة كاملاً &nbsp;&middot;&nbsp; استخدم قلماً غامقاً</span>
+    </div>
+
+    <div class="qg"><div class="qc"><div class="qr"><span class="qn">1</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">2</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">3</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">4</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">5</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">6</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">7</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">8</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">9</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">10</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">11</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">12</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">13</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">14</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">15</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">16</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">17</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">18</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">19</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">20</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">21</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">22</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">23</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">24</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">25</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div></div><div class="qc"><div class="qr"><span class="qn">26</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">27</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">28</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">29</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">30</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">31</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">32</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">33</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">34</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">35</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">36</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">37</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">38</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">39</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">40</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">41</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">42</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">43</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">44</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">45</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">46</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">47</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">48</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">49</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">50</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div></div><div class="qc"><div class="qr"><span class="qn">51</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">52</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">53</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">54</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">55</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">56</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">57</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">58</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">59</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">60</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">61</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">62</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">63</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">64</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">65</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">66</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">67</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">68</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">69</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">70</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">71</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">72</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">73</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">74</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">75</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div></div><div class="qc"><div class="qr"><span class="qn">76</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">77</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">78</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">79</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">80</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">81</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">82</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">83</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">84</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">85</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">86</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">87</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">88</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">89</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">90</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">91</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">92</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">93</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">94</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">95</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">96</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">97</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">98</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">99</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div><div class="qr"><span class="qn">100</span><span class="bs"><span class="bw"><span class="bubble"></span><span class="bl">أ</span></span><span class="bw"><span class="bubble"></span><span class="bl">ب</span></span><span class="bw"><span class="bubble"></span><span class="bl">ج</span></span><span class="bw"><span class="bubble"></span><span class="bl">د</span></span></span></div></div></div>
+
+    <div class="footer">ورقة إجابة OMR &nbsp;|&nbsp; 100 سؤال &nbsp;|&nbsp; A4</div>
+
+  </div>
+</div>
+</body>
+</html>

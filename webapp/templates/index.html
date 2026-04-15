@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a6fc4">
+  <title>OMR Auto-Marking</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <header>
+    <h1>OMR Auto-Marking</h1>
+    <p>Photograph an answer sheet — get results in seconds.</p>
+  </header>
+
+  <form id="scan-form" action="/scan" method="post" enctype="multipart/form-data">
+
+    <!-- Template selection -->
+    <div class="card">
+      <h2>Sheet Template</h2>
+      <div class="form-row">
+        <label for="template_id">Select layout</label>
+        <select name="template_id" id="template_id">
+          {% for tid, label in template_choices %}
+          <option value="{{ tid }}" {% if tid == 'Q100_5ch' %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-row toggles">
+        <label class="toggle-row">
+          <input type="checkbox" name="white_balance" value="true" checked>
+          White balance
+        </label>
+        <label class="toggle-row">
+          <input type="checkbox" name="denoise" value="true" checked>
+          Denoise
+        </label>
+      </div>
+    </div>
+
+    <!-- Image upload / camera capture -->
+    <div class="card">
+      <h2>Answer Sheet Photo</h2>
+      <div class="upload-area" id="drop-zone">
+        <input
+          type="file"
+          name="image"
+          id="image-input"
+          accept="image/*"
+          capture="environment"
+          required
+        >
+        <div class="upload-icon">📷</div>
+        <p class="upload-label">
+          Tap to <span>take a photo</span> or choose a file
+        </p>
+        <p class="upload-label" style="font-size:.8rem;margin-top:4px;">
+          JPEG · PNG · HEIC
+        </p>
+      </div>
+
+      <div id="preview-wrap">
+        <img id="preview-img" src="#" alt="preview">
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <button type="submit" class="btn btn-primary" id="submit-btn">
+      Scan &amp; Mark
+    </button>
+
+    <div class="spinner-wrap" id="spinner">
+      <div class="spinner"></div>
+      <p>Processing — please wait…</p>
+    </div>
+
+  </form>
+
+</div>
+
+<script>
+  const input      = document.getElementById('image-input');
+  const preview    = document.getElementById('preview-img');
+  const previewWrap = document.getElementById('preview-wrap');
+  const submitBtn  = document.getElementById('submit-btn');
+  const spinner    = document.getElementById('spinner');
+  const form       = document.getElementById('scan-form');
+
+  input.addEventListener('change', () => {
+    const file = input.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    preview.src = url;
+    previewWrap.style.display = 'block';
+  });
+
+  form.addEventListener('submit', () => {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Scanning…';
+    spinner.style.display = 'block';
+  });
+
+  // Checkbox → boolean-string mapping FastAPI expects
+  form.addEventListener('formdata', (e) => {
+    const fd = e.formData;
+    ['white_balance', 'denoise'].forEach(name => {
+      if (!fd.has(name)) fd.set(name, 'false');
+    });
+  });
+</script>
+
+</body>
+</html>
