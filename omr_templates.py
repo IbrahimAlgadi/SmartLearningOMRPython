@@ -289,15 +289,18 @@ def _lp(n_q: int) -> dict:
     return     dict(bubble=18, qn=13, ch=11, row_py=3,  col_gap=12)
 
 
+_VALID_Q = (10, 15, 18, 20, 30, 40, 50, 60, 80, 100)
+
+
 def make_template(n_q: int, n_ch: int, lang: str = "ar") -> TemplateSpec:
     """
     Build a TemplateSpec for any valid (n_questions, n_choices) combination.
 
-    Production templates  : make_template(100, 5), make_template(50, 5), make_template(20, 5)
-    CNN-training variants : make_template(100, 4), make_template(50, 3), …
+    Supported question counts: 10, 15, 18, 20, 30, 40, 50, 60, 80, 100
+    Supported choice counts:   2, 3, 4, 5
     """
-    if n_q not in (20, 50, 100):
-        raise ValueError(f"n_q must be 20, 50, or 100; got {n_q}")
+    if n_q not in _VALID_Q:
+        raise ValueError(f"n_q must be one of {_VALID_Q}; got {n_q}")
     if n_ch not in (2, 3, 4, 5):
         raise ValueError(f"n_ch must be 2-5; got {n_ch}")
 
@@ -334,7 +337,7 @@ def make_template(n_q: int, n_ch: int, lang: str = "ar") -> TemplateSpec:
 
 REGISTRY: Dict[str, TemplateSpec] = {}
 
-for _nq in (20, 50, 100):
+for _nq in _VALID_Q:
     for _nch in (2, 3, 4, 5):
         _t = make_template(_nq, _nch)
         REGISTRY[_t.template_id] = _t

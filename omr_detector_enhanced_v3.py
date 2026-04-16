@@ -68,6 +68,7 @@ ALGO = {
     "fill_ratio_ambi_lo":  0.18,
     "fill_ratio_ambi_hi":  0.55,
     "bubble_r":            9,
+    "cls_r_shrink":        1,     # classification samples bubble_r minus this (avoids ring ink)
     # Lattice fitting
     "lattice_max_snap_px": 12,   # snap only if detected centre within N px
     # CNN model paths
@@ -75,6 +76,9 @@ ALGO = {
     "pt_path":   "bubble_classifier_v3.pt",
     # Cross-row consistency
     "max_consec_empty_rows": 10,
+    # Circle-centre snapping (step 5E)
+    "circle_snap_r":          6,   # ±px search radius around template position
+    "circle_snap_min_gain":   3.0, # min edge-score improvement to accept a snap
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -124,6 +128,7 @@ class ColumnLayout:
     col_idx: int
     x0: int; x1: int
     y0: int; y1: int
+    from_bar: bool = False   # True when x0/x1 are bar-detected bubble zone bounds
 
 
 @dataclass
@@ -556,7 +561,8 @@ class BubbleGridEngine:
         if len(bars) == len(static_cols):
             return [ColumnLayout(col_idx=i,
                                  x0=bx0, x1=bx1,
-                                 y0=cty,  y1=cby)
+                                 y0=cty,  y1=cby,
+                                 from_bar=True)
                     for i, (bx0, bx1, cty, cby) in enumerate(bars)]
         print(f"  [5-grid] bar count {len(bars)} != {len(static_cols)} - "
               "using static columns")
@@ -875,11 +881,32 @@ class BubbleGridEngine:
                           bubble_r: int,
                           ) -> List[GeneratedBubble]:
         """
-        Use TemplateSpec.bubble_x_positions for precise choice X positions
-        (same formula as the dataset generator → no geometry drift).
+        Compute choice X positions and generate bubbles for every (row, choice).
+
+        When the column was refined via bar detection (col.from_bar=True),
+        col.x0/x1 are the actual printed bar bounds in warped space, which equal
+        the bubble-zone bounds by construction (generate_sheet_v3 draws the bars
+        from bzone_x0 to bzone_x1).  Using them directly eliminates the residual
+        horizontal drift that appears on edge columns after perspective correction.
+
+        When bars were not detected (col.from_bar=False), fall back to the static
+        template formula which is calibrated for perfect-geometry sheets.
         """
-        base_q    = template.question_for(col_idx, 0)   # Q for row 0 of this col
-        xs        = template.bubble_x_positions(col_idx)
+        n = template.n_choices
+        if col.from_bar and col.x1 > col.x0:
+            # Bar bounds == bubble zone.  The sheet uses CSS space-around, so
+            # each choice gets an equal share of the width and is centered in it:
+            #   share = width / n
+            #   center_i = x0 + share * (0.5 + i)
+            bx0 = float(col.x0)
+            bx1 = float(col.x1)
+            share = (bx1 - bx0) / n
+            xs = [round(bx0 + share * (0.5 + i)) for i in range(n)]
+            if template.rtl:
+                xs.reverse()
+        else:
+            xs = template.bubble_x_positions(col_idx)
+
         bubbles: List[GeneratedBubble] = []
         for row_idx, cy in enumerate(row_centers[:template.rows_per_col]):
             q_num = template.question_for(col_idx, row_idx)
@@ -895,6 +922,154 @@ class BubbleGridEngine:
                     option=template.choice_labels[rank],
                 ))
         return bubbles
+
+    # ── 5E: circle-centre snapping ────────────────────────────────────────────
+
+    @staticmethod
+    def _snap_to_circles(
+        gray: np.ndarray,
+        bubbles: List[GeneratedBubble],
+        columns: List[ColumnLayout],
+        bubble_r: int,
+        snap_r: int = 8,
+        min_gain: float = 3.0,
+    ) -> Tuple[List[GeneratedBubble], int]:
+        """Snap each bubble centre to the geometric centre of its printed ring.
+
+        Algorithm
+        ---------
+        1. Canny edges on the grayscale warped image, with column border pixels
+           blanked out so the strong vertical bar edges cannot steal snaps.
+        2. Pre-compute the circle perimeter sampling offsets (at radius bubble_r).
+        3. For every bubble, evaluate the mean edge response at each candidate
+           centre in a (2*snap_r+1)² neighbourhood using vectorised numpy ops.
+        4. Candidate must remain inside its own column's x/y bounds (±bubble_r
+           tolerance).  Candidates outside are masked to score 0.
+        5. Snap only if the best candidate beats the original by ≥ min_gain.
+
+        Works for empty bubbles (dark ink ring → edge) and filled ones
+        (outer edge where filled area meets white paper).
+
+        Radius robustness: tests r-2 … r+2 at each candidate position and
+        takes the max, so a small error in bubble_r doesn't miss the ring.
+        """
+        edges = cv2.Canny(gray, 40, 100)
+
+        # Blank a narrow strip centred on each column boundary (the printed bar
+        # line itself) without eating into the bubble ring of edge bubbles.
+        for col in columns:
+            for x in (col.x0, col.x1):
+                x0b = max(0, x - 1)
+                x1b = min(edges.shape[1], x + 2)
+                edges[:, x0b:x1b] = 0
+
+        # Build perimeter offsets for r-2 … r+2 and merge with max-pool so a
+        # small radius error still gives a strong response at the true centre.
+        def _perim(r: int) -> Tuple[np.ndarray, np.ndarray]:
+            n = max(24, r * 4)
+            t = np.linspace(0, 2 * np.pi, n, endpoint=False)
+            return (np.round(r * np.cos(t)).astype(np.int32),
+                    np.round(r * np.sin(t)).astype(np.int32))
+
+        perims = [_perim(max(3, bubble_r + dr)) for dr in range(-2, 3)]
+
+        H, W = edges.shape
+
+        drange = np.arange(-snap_r, snap_r + 1, dtype=np.int32)
+        DY, DX = np.meshgrid(drange, drange, indexing='ij')   # (2R+1, 2R+1)
+        n_win  = len(drange)
+
+        # Distance-from-template penalty: prefer staying close to the original
+        # position.  Penalise 1.5 edge-score units per pixel of displacement.
+        DIST_PENALTY = 1.5
+        dist_map = np.sqrt((DX.astype(np.float32)) ** 2 +
+                           (DY.astype(np.float32)) ** 2) * DIST_PENALTY
+
+        # Build per-column allowed x/y ranges (bubble centre must stay inside)
+        col_bounds: Dict[int, Tuple[int, int, int, int]] = {
+            col.col_idx: (col.x0 + bubble_r, col.x1 - bubble_r,
+                          col.y0,            col.y1)
+            for col in columns
+        }
+
+        snapped: List[GeneratedBubble] = []
+        n_snapped = 0
+
+        for b in bubbles:
+            CX = b.cx + DX   # (n_win, n_win)
+            CY = b.cy + DY
+
+            # Max-pool over all tested radii → robust to small radius error
+            scores = np.zeros((n_win, n_win), dtype=np.float32)
+            for px_off, py_off in perims:
+                XS = np.clip(
+                    CX[:, :, np.newaxis] + px_off[np.newaxis, np.newaxis, :],
+                    0, W - 1,
+                )
+                YS = np.clip(
+                    CY[:, :, np.newaxis] + py_off[np.newaxis, np.newaxis, :],
+                    0, H - 1,
+                )
+                scores = np.maximum(scores,
+                                    edges[YS, XS].mean(axis=2).astype(np.float32))
+
+            # Mask candidates whose centre falls outside this column's bounds
+            bnd = col_bounds.get(b.col_idx)
+            if bnd is not None:
+                cx_lo, cx_hi, cy_lo, cy_hi = bnd
+                outside = (CX < cx_lo) | (CX > cx_hi) | (CY < cy_lo) | (CY > cy_hi)
+                scores[outside] = 0.0
+
+            # Apply distance penalty so nearby candidates are preferred
+            penalised = scores - dist_map
+
+            orig_score = float(penalised[snap_r, snap_r])   # dist_map centre = 0
+            best_flat  = int(np.argmax(penalised))
+            bi, bj     = divmod(best_flat, n_win)
+            best_score = float(penalised[bi, bj])
+
+            if best_score > orig_score + min_gain and (bi != snap_r or bj != snap_r):
+                new_cx = b.cx + int(drange[bj])
+                snapped.append(GeneratedBubble(
+                    cx=new_cx, cy=b.cy, r=b.r,
+                    col_idx=b.col_idx, row_idx=b.row_idx,
+                    choice_rank=b.choice_rank,
+                    question_id=b.question_id, option=b.option,
+                ))
+                n_snapped += 1
+            else:
+                snapped.append(b)
+
+        return snapped, n_snapped
+
+    @staticmethod
+    def _regularize_grid(bubbles: List[GeneratedBubble]) -> List[GeneratedBubble]:
+        """Force strict X alignment: median X per (col, choice).
+
+        Y is left untouched — it comes directly from the band-detected
+        row_centers which are already fixed relative to the bars.
+        """
+        from collections import defaultdict
+
+        x_groups: Dict[Tuple[int, int], List[int]] = defaultdict(list)
+        for b in bubbles:
+            x_groups[(b.col_idx, b.choice_rank)].append(b.cx)
+
+        med_x: Dict[Tuple[int, int], int] = {
+            k: int(round(float(np.median(vs)))) for k, vs in x_groups.items()
+        }
+
+        return [
+            GeneratedBubble(
+                cx=med_x[(b.col_idx, b.choice_rank)],
+                cy=b.cy,
+                r=b.r,
+                col_idx=b.col_idx, row_idx=b.row_idx,
+                choice_rank=b.choice_rank,
+                question_id=b.question_id, option=b.option,
+            )
+            for b in bubbles
+        ]
 
     # ── public ────────────────────────────────────────────────────────────────
 
@@ -913,62 +1088,122 @@ class BubbleGridEngine:
 
         # 5B: refine columns
         columns = self._bars_to_columns(bars, layout.columns)
-
-        # Combined dark-pixel profile for faint-column fallback
-        dark_thr  = ALGO["row_dark_thr"]
-        y0_com    = min(c.y0 for c in columns)
-        y1_com    = max(c.y1 for c in columns)
-        combined  = np.zeros(y1_com - y0_com, dtype=np.float64)
-        for col in columns:
-            crop  = gray[col.y0:col.y1, col.x0:col.x1]
-            cw_   = float(col.x1 - col.x0)
-            p     = np.sum(crop < dark_thr, axis=1).astype(np.float64) / cw_
-            s     = col.y0 - y0_com
-            combined[s:s + len(p)] = np.maximum(combined[s:s + len(p)], p)
         avg_col_w  = float(np.mean([c.x1 - c.x0 for c in columns]))
-        combined  *= avg_col_w
 
-        bubble_r  = max(ALGO["bubble_r"], round(avg_col_w * 0.047))
+        bubble_r  = max(ALGO["bubble_r"], template.warp_bub_r)
 
-        # 5C: Question-row Y positions from background-corrected band detection.
-        # Wide bands (width ≥ 12px) = question rows; narrow bands = header labels.
-        # This eliminates the non-uniform row-height bias in template.row_y().
-        row_centers, y_shift = self._detect_question_rows_calibrated(
-            gray, template,
-            layout.grid_y0, layout.grid_y1,
-            layout.grid_x0, layout.grid_x1,
-        )
-        print(f"  [5-grid] detected rows: {len(row_centers)}  "
-              f"median_y_shift={y_shift:+d}px")
+        # 5C: Build bubbles from Playwright-extracted coords (JSON) if available,
+        # otherwise fall back to template formula geometry.
+        coords_file = pathlib.Path("bubble_coords") / f"{template.template_id}_ar.json"
+        if coords_file.exists():
+            import json as _json
+            cdata = _json.loads(coords_file.read_text(encoding="utf-8"))
 
-        all_raw: List[List[int]] = []
-        for i in range(len(columns)):
-            all_raw.append(list(row_centers))
-            print(f"  [5-grid] col_{i}  rows={len(row_centers)} (band-calibrated)")
+            # Per-column X correction: compare JSON ideal col centre
+            # with bar-detected col centre in the actual warped image.
+            from collections import defaultdict as _ddict
+            _col_cxs: Dict[int, List[float]] = _ddict(list)
+            for b in cdata["bubbles"]:
+                _col_cxs[b["col"]].append(b["cx_frac"] * WARP_W)
+            col_dx: Dict[int, int] = {}
+            for ci, cxs in _col_cxs.items():
+                json_cx = float(np.mean(cxs))
+                col = columns[ci] if ci < len(columns) else None
+                if col is not None and col.from_bar:
+                    det_cx = (col.x0 + col.x1) / 2
+                    col_dx[ci] = round(det_cx - json_cx)
+                else:
+                    col_dx[ci] = 0
 
-        lat_q = 1.0
-        exp_pitch = round(template.warp_row_h)
-        print(f"  [5-grid] lattice quality={lat_q:.3f}  "
-              f"pitch~{exp_pitch}px (template row-height)")
+            all_bubbles: List[GeneratedBubble] = []
+            for b in cdata["bubbles"]:
+                cx = round(b["cx_frac"] * WARP_W) + col_dx.get(b["col"], 0)
+                cy = round(b["cy_frac"] * WARP_H)
+                r_from_json = max(ALGO["bubble_r"], round(b["r_frac"] * WARP_W))
+                all_bubbles.append(GeneratedBubble(
+                    cx=cx, cy=cy, r=r_from_json,
+                    col_idx=b["col"], row_idx=b["row"],
+                    choice_rank=b["choice"],
+                    question_id=str(b["q"]),
+                    option=template.choice_labels[b["choice"]],
+                ))
+            bubble_r = all_bubbles[0].r if all_bubbles else bubble_r
+            source = "playwright-json"
+        else:
+            tmpl_bubbles = template.all_bubble_positions_warp()
+            all_bubbles = []
+            for col_idx, row_idx, rank, cx, cy, r in tmpl_bubbles:
+                col = columns[col_idx] if col_idx < len(columns) else None
+                if col is not None and col.from_bar:
+                    tmpl_col_cx = (template.col_x0(col_idx) + template.col_x1(col_idx)) / 2
+                    det_col_cx  = (col.x0 + col.x1) / 2
+                    cx = cx + round(det_col_cx - tmpl_col_cx)
 
-        all_snapped = all_raw
-
-        # 5D: bubble positions
-        all_bubbles: List[GeneratedBubble] = []
-        for i, (col, row_ctrs) in enumerate(zip(columns, all_snapped)):
-            bs = self._generate_bubbles(col, row_ctrs, i, template, bubble_r)
-            all_bubbles.extend(bs)
+                q_num = template.question_for(col_idx, row_idx)
+                all_bubbles.append(GeneratedBubble(
+                    cx=cx, cy=cy, r=bubble_r,
+                    col_idx=col_idx, row_idx=row_idx,
+                    choice_rank=rank,
+                    question_id=str(q_num),
+                    option=template.choice_labels[rank],
+                ))
+            source = "template-formula"
 
         print(f"  [5-grid] bubbles={len(all_bubbles)} "
-              f"(expected={template.n_questions * template.n_choices})")
+              f"(expected={template.n_questions * template.n_choices})  "
+              f"bubble_r={bubble_r}  source={source}")
+
+        # 5E: snap each bubble to the geometric centre of its printed ring
+        all_bubbles, n_snapped = self._snap_to_circles(
+            gray, all_bubbles, columns, bubble_r,
+            snap_r=ALGO["circle_snap_r"],
+            min_gain=ALGO["circle_snap_min_gain"],
+        )
+        print(f"  [5-grid] circle-snap: {n_snapped}/{len(all_bubbles)} bubbles moved")
+
+        # 5F: regularize — force strict grid alignment via median per group
+        all_bubbles = self._regularize_grid(all_bubbles)
+        print(f"  [5-grid] grid regularized (median X per choice-col, median Y per row-col)")
 
         # Debug overlay
         vis = warped.copy()
         for b in all_bubbles:
-            cv2.circle(vis, (b.cx, b.cy), b.r, (0, 200, 80), 1)
+            cls_r_vis = max(4, b.r - ALGO["cls_r_shrink"])
+            cv2.circle(vis, (b.cx, b.cy), int(cls_r_vis), (0, 200, 80), 1)
         for col in columns:
             cv2.rectangle(vis, (col.x0, col.y0), (col.x1, col.y1),
                           (0, 140, 255), 1)
+
+        # Grid lines through bubble centres for alignment inspection
+        from collections import defaultdict
+        rows_by_col: Dict[int, List[int]] = defaultdict(list)
+        for b in all_bubbles:
+            rows_by_col[b.col_idx].append(b.cy)
+
+        overlay = vis.copy()
+        grid_color = (255, 160, 0)   # bright blue-ish (BGR)
+        gx0 = min(c.x0 for c in columns)
+        gx1 = max(c.x1 for c in columns)
+        # Horizontal: one per unique Y
+        seen_y: set = set()
+        for ys in rows_by_col.values():
+            for y in ys:
+                if y not in seen_y:
+                    seen_y.add(y)
+                    cv2.line(overlay, (gx0, y), (gx1, y), grid_color, 1,
+                             cv2.LINE_AA)
+        # Vertical: one per unique X within each column
+        xs_per_col: Dict[int, set] = defaultdict(set)
+        for b in all_bubbles:
+            xs_per_col[b.col_idx].add(b.cx)
+        for ci, xs in xs_per_col.items():
+            col = columns[ci]
+            for x in xs:
+                cv2.line(overlay, (x, col.y0), (x, col.y1), grid_color, 1,
+                         cv2.LINE_AA)
+        # Blend at 30% opacity so bubbles/sheet stay clearly visible
+        cv2.addWeighted(overlay, 0.30, vis, 0.70, 0, vis)
+
         _dbg(vis, "06_grid.jpg", debug_dir)
 
         return BubbleGridContract(
@@ -976,7 +1211,7 @@ class BubbleGridEngine:
             bubbles=all_bubbles,
             grid_x0=layout.grid_x0, grid_y0=layout.grid_y0,
             grid_x1=layout.grid_x1, grid_y1=layout.grid_y1,
-            lattice_quality=lat_q,
+            lattice_quality=1.0,
             bubble_r=bubble_r,
         )
 
@@ -1164,12 +1399,18 @@ class BubbleClassifier:
         use_cnn = self._session is not None or self._torch_fn is not None
 
         for b in grid.bubbles:
-            # Direct fill ratio — v2-compatible, used for both classification
-            # and the stored fill_ratio field regardless of CNN availability.
-            fr = self._fill_ratio_direct(gray_norm, b.cx, b.cy, b.r)
+            cls_r = max(4, b.r - ALGO["cls_r_shrink"])
+
+            fr = self._fill_ratio_direct(gray_norm, b.cx, b.cy, cls_r)
 
             if use_cnn:
-                crop = self._get_crop(gray_norm, b)
+                cls_b = GeneratedBubble(
+                    cx=b.cx, cy=b.cy, r=cls_r,
+                    col_idx=b.col_idx, row_idx=b.row_idx,
+                    choice_rank=b.choice_rank,
+                    question_id=b.question_id, option=b.option,
+                )
+                crop = self._get_crop(gray_norm, cls_b)
                 status, conf = self._classify_cnn(crop)
                 # When CNN is uncertain (ambiguous), use fill-ratio to decide.
                 # This bridges the synthetic→real domain gap for marginal marks.

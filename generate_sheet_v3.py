@@ -70,10 +70,8 @@ def layout_for(n: int) -> dict:
         return dict(n_cols=2, bubble=26, qn_size=16, ch_size=14,
                     row_py=8,  header_every=5,  col_gap=28)
     if n <= 50:
-        # 4 cols × 13 rows = 52 slots — fits with room to breathe
         return dict(n_cols=4, bubble=20, qn_size=14, ch_size=12,
                     row_py=5,  header_every=5,  col_gap=12)
-    # 100
     return     dict(n_cols=4, bubble=18, qn_size=13, ch_size=11,
                     row_py=3,  header_every=5,  col_gap=12)
 
@@ -544,18 +542,107 @@ def to_pdf(html_path: str, pdf_path: str) -> None:
         browser.close()
     print(f"[PDF] saved -> {pdf_path}")
 
+
+# ── Bubble coordinate extraction via Playwright ──────────────────────────────
+
+def extract_bubble_coords(html_path: str, n_questions: int, n_choices: int,
+                          n_cols: int, rtl: bool) -> dict:
+    """Render the HTML sheet and measure actual bubble centre positions.
+
+    Returns a dict ready to be saved as JSON:
+        {
+            "template": "Q10_5ch",
+            "sheet_w_mm": 210, "sheet_h_mm": 297,
+            "bubbles": [
+                {"q": 1, "choice": 0, "col": 0, "row": 0,
+                 "cx_frac": 0.xxx, "cy_frac": 0.yyy, "r_frac": 0.zzz},
+                ...
+            ]
+        }
+
+    Coordinates are stored as fractions of the sheet size (0-1) so they
+    are resolution-independent and can be mapped to any warped image size.
+    """
+    import json as _json
+    from playwright.sync_api import sync_playwright
+
+    rpc = (n_questions + n_cols - 1) // n_cols
+
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch()
+        page    = browser.new_page()
+        page.goto(f"file:///{pathlib.Path(html_path).resolve()}")
+        page.wait_for_load_state("networkidle")
+
+        sheet_box = page.query_selector(".sheet").bounding_box()
+        sw, sh = sheet_box["width"], sheet_box["height"]
+
+        columns = page.query_selector_all(".qc")
+        bubbles_out = []
+
+        for col_idx, col_el in enumerate(columns):
+            q_rows = col_el.query_selector_all(".qr:not(.qr-phantom)")
+            for row_idx, qr_el in enumerate(q_rows):
+                bubble_els = qr_el.query_selector_all(".bubble")
+                for rank, bub_el in enumerate(bubble_els):
+                    box = bub_el.bounding_box()
+                    cx = (box["x"] + box["width"] / 2 - sheet_box["x"]) / sw
+                    cy = (box["y"] + box["height"] / 2 - sheet_box["y"]) / sh
+                    r  = (box["width"] / 2) / sw
+
+                    if rtl:
+                        q_num = (n_cols - 1 - col_idx) * rpc + row_idx + 1
+                    else:
+                        q_num = col_idx * rpc + row_idx + 1
+
+                    bubbles_out.append({
+                        "q": q_num,
+                        "choice": rank,
+                        "col": col_idx,
+                        "row": row_idx,
+                        "cx_frac": round(cx, 6),
+                        "cy_frac": round(cy, 6),
+                        "r_frac":  round(r, 6),
+                    })
+
+        browser.close()
+
+    return {
+        "template": f"Q{n_questions}_{n_choices}ch",
+        "n_questions": n_questions,
+        "n_choices": n_choices,
+        "n_cols": n_cols,
+        "rtl": rtl,
+        "bubbles": bubbles_out,
+    }
+
 # ── main ──────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
+    import json as _json
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--pdf", action="store_true")
     args = ap.parse_args()
 
-    sizes = [20, 50, 100]
+    coords_dir = pathlib.Path("bubble_coords")
+    coords_dir.mkdir(exist_ok=True)
+
+    sizes = [10, 15, 18, 20, 30, 40, 50, 60, 80, 100]
     for n in sizes:
         for lang in ("en", "ar"):
             stem = f"answer_sheet_v3_{n}q_{lang}"
+            lp   = layout_for(n)
             html = generate_html(lang, DATA, n)
             pathlib.Path(f"{stem}.html").write_text(html, encoding="utf-8")
             print(f"[{lang.upper()} {n:>3}Q] -> {stem}.html")
             if args.pdf:
                 to_pdf(f"{stem}.html", f"{stem}.pdf")
+
+                rtl = (lang == "ar")
+                coords = extract_bubble_coords(
+                    f"{stem}.html", n, 5, lp["n_cols"], rtl)
+                coord_file = coords_dir / f"Q{n}_5ch_{lang}.json"
+                coord_file.write_text(
+                    _json.dumps(coords, indent=2, ensure_ascii=False),
+                    encoding="utf-8")
+                print(f"[COORDS] saved -> {coord_file}")
