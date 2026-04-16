@@ -43,6 +43,7 @@ from omr_templates import (
     WARP_W, WARP_H,
     WARP_GX0, WARP_GX1, WARP_GY0, WARP_GY1,
     WARP_ACX_L, WARP_ACX_R, WARP_ACY_T, WARP_ACY_B,
+    WARP_ANCHOR_X1_L, WARP_ANCHOR_X0_R,
     TemplateSpec,
     get_template,
     infer_template,
@@ -503,10 +504,14 @@ class BubbleGridEngine:
         col_width   = (gx1 - gx0) / max(n_cols, 1)
         min_bar_run = max(min_bar, int(col_width * 0.20))
 
-        scan_x0 = max(0, gx0 - 30)
-        scan_x1 = min(W, gx1 + 30)
+        scan_x0 = max(0, gx0 - 30, WARP_ANCHOR_X1_L + 2)
+        scan_x1 = min(W, gx1 + 30, WARP_ANCHOR_X0_R - 2)
 
-        def _scan(sy0: int, sy1: int) -> List[Tuple[int, int]]:
+        print(f"    [bars] scan_x=[{scan_x0},{scan_x1}]  "
+              f"grid_x=[{gx0},{gx1}]  dark_thr={dark_thr}  "
+              f"min_bar_run={min_bar_run}")
+
+        def _scan(label: str, sy0: int, sy1: int) -> List[Tuple[int, int]]:
             sy0 = max(0, sy0); sy1 = min(H, sy1)
             if sy0 >= sy1:
                 return []
@@ -525,33 +530,56 @@ class BubbleGridEngine:
                         runs.append((scan_x0 + rs, scan_x0 + xi - 1))
             if in_run and len(is_dark) - rs >= min_bar_run:
                 runs.append((scan_x0 + rs, scan_x0 + len(is_dark) - 1))
+            print(f"    [bars] {label} y=[{sy0},{sy1}]  "
+                  f"found {len(runs)} runs: "
+                  + ", ".join(f"[{r[0]},{r[1]}] w={r[1]-r[0]+1}" for r in runs))
             return runs
 
-        top = _scan(gy0 - 70, gy0 - 4)
-        bot = _scan(gy1 + 4,  gy1 + 70)
+        top_y0, top_y1 = gy0 - 70, gy0 - 4
+        top = _scan("top ", top_y0, top_y1)
+        bot_y0, bot_y1 = gy1 + 4, gy1 + 70
+        bot = _scan("bot ", bot_y0, bot_y1)
         if not top:
-            top = _scan(gy0 - 4, gy0 + 30)
+            top_y0, top_y1 = gy0 - 4, gy0 + 30
+            top = _scan("top2", top_y0, top_y1)
         if not bot:
-            bot = _scan(gy1 - 30, gy1 + 4)
+            bot_y0, bot_y1 = gy1 - 30, gy1 + 4
+            bot = _scan("bot2", bot_y0, bot_y1)
         if not top:
             return []
 
+        # Column Y span: from top of detected top-bar region, extending
+        # modestly past grid bottom to cover the bottom bar strip.
+        col_y0 = max(0, top_y0)
+        col_y1 = min(H, gy1 + 10)
+
         results: List[Tuple[int, int, int, int]] = []
         used_bot: set = set()
+        # Only merge top↔bot if we have a comparable number of bars.
+        # When bot is severely incomplete, merging distorts the matched bars.
+        merge_ok = len(bot) >= max(1, len(top) - 1)
         for tx0, tx1 in top:
             tc = (tx0 + tx1) // 2
             best_j, best_d = -1, col_width * 0.4
-            for j, (bx0, bx1) in enumerate(bot):
-                d = abs((bx0 + bx1) // 2 - tc)
-                if d < best_d:
-                    best_d, best_j = d, j
+            if merge_ok:
+                for j, (bx0, bx1) in enumerate(bot):
+                    d = abs((bx0 + bx1) // 2 - tc)
+                    if d < best_d:
+                        best_d, best_j = d, j
             if best_j >= 0 and best_j not in used_bot:
                 bx0, bx1 = bot[best_j]
-                results.append((min(tx0, bx0), max(tx1, bx1), gy0 - 4, gy1 + 4))
+                merged = (min(tx0, bx0), max(tx1, bx1), col_y0, col_y1)
+                results.append(merged)
                 used_bot.add(best_j)
+                print(f"    [bars] match top[{tx0},{tx1}] <-> bot[{bx0},{bx1}] "
+                      f"=> merged x=[{merged[0]},{merged[1]}]")
             else:
-                results.append((tx0, tx1, gy0 - 4, gy1 + 4))
-        return sorted(results, key=lambda r: r[0])
+                results.append((tx0, tx1, col_y0, col_y1))
+                print(f"    [bars] top-only [{tx0},{tx1}]")
+        results = sorted(results, key=lambda r: r[0])
+        print(f"    [bars] final {len(results)} bars: "
+              + ", ".join(f"[{r[0]},{r[1]}] w={r[1]-r[0]+1}" for r in results))
+        return results
 
     # ── 5B: bars → columns ────────────────────────────────────────────────────
 
@@ -1112,6 +1140,9 @@ class BubbleGridEngine:
                 if col is not None and col.from_bar:
                     det_cx = (col.x0 + col.x1) / 2
                     col_dx[ci] = round(det_cx - json_cx)
+                    print(f"    [5C] col {ci}: json_cx={json_cx:.1f}  "
+                          f"bar_cx={det_cx:.1f}  bar=[{col.x0},{col.x1}]  "
+                          f"dx={col_dx[ci]:+d}")
                 else:
                     col_dx[ci] = 0
 

@@ -102,6 +102,14 @@ WARP_ACX_R = mm_to_warp_x(A4_W_MM - ANCHOR_CORNER_INSET_MM - ANCHOR_CORNER_MM / 
 WARP_ACY_T = mm_to_warp_y(ANCHOR_CORNER_INSET_MM + ANCHOR_CORNER_MM / 2)   # ≈ 36
 WARP_ACY_B = mm_to_warp_y(A4_H_MM  - ANCHOR_CORNER_INSET_MM - ANCHOR_CORNER_MM / 2) # ≈ 1024
 
+# Anchor half-size in warped pixels (for exclusion zones)
+_ACH_W = mm_to_warp_x(ANCHOR_CORNER_MM / 2)  # ≈ 21
+_ACH_H = mm_to_warp_y(ANCHOR_CORNER_MM / 2)  # ≈ 21
+WARP_ANCHOR_X0_L = WARP_ACX_L - _ACH_W       # left anchor left edge   ≈ 15
+WARP_ANCHOR_X1_L = WARP_ACX_L + _ACH_W       # left anchor right edge  ≈ 57
+WARP_ANCHOR_X0_R = WARP_ACX_R - _ACH_W       # right anchor left edge  ≈ 693
+WARP_ANCHOR_X1_R = WARP_ACX_R + _ACH_W       # right anchor right edge ≈ 735
+
 # ─────────────────────────────────────────────────────────────────────────────
 #  Choice label sets
 # ─────────────────────────────────────────────────────────────────────────────

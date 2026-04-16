@@ -577,10 +577,16 @@ def extract_bubble_coords(html_path: str, n_questions: int, n_choices: int,
         sheet_box = page.query_selector(".sheet").bounding_box()
         sw, sh = sheet_box["width"], sheet_box["height"]
 
-        columns = page.query_selector_all(".qc")
+        dom_columns = page.query_selector_all(".qc")
+
+        # Sort columns by visual x-position (left→right) so col indices
+        # match the detector's bar-detection ordering regardless of RTL/LTR.
+        col_boxes = [(el, el.bounding_box()) for el in dom_columns]
+        col_boxes.sort(key=lambda cb: cb[1]["x"])
+
         bubbles_out = []
 
-        for col_idx, col_el in enumerate(columns):
+        for col_idx, (col_el, _cbox) in enumerate(col_boxes):
             q_rows = col_el.query_selector_all(".qr:not(.qr-phantom)")
             for row_idx, qr_el in enumerate(q_rows):
                 bubble_els = qr_el.query_selector_all(".bubble")
