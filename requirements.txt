@@ -1,12 +1,47 @@
-# ── Core OMR dependencies ────────────────────────────────────────────────────
-opencv-python
-numpy
-Pillow
-torch
-onnxruntime
+# ── Install all dependencies ──────────────────────────────────────────────────
+# pip install --no-cache-dir -r requirements.txt
+#
+# Versions pinned to those tested in this project (Apr 2026).
+# Update: pip install --upgrade <pkg> && re-test, then update the pin here.
+#
+# NOTE: torch is large (~2-3 GB with CUDA). To skip GPU support use the
+# CPU-only wheel instead:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
 
-# ── FastAPI web app ──────────────────────────────────────────────────────────
-fastapi>=0.115.0
-uvicorn[standard]>=0.30.0
-jinja2>=3.1.0
-python-multipart>=0.0.9
+# ── Image processing (core OMR) ───────────────────────────────────────────────
+opencv-python==4.13.0.92
+numpy==2.4.3
+Pillow==12.1.1
+scipy==1.17.1
+imutils==0.5.4
+
+# ── ML / inference ────────────────────────────────────────────────────────────
+# onnxruntime is the primary inference path (uses bubble_classifier_v3.onnx).
+# torch is the fallback path (uses bubble_classifier_v3.pt). Both are optional
+# at runtime — the detector falls back to fill-ratio if neither is available.
+onnxruntime==1.24.4
+torch>=2.11.0
+
+# ── Sheet generation & QR codes ──────────────────────────────────────────────
+qrcode==8.2
+PyYAML==6.0.3
+
+# ── Browser automation (sheet rendering / Playwright coords) ─────────────────
+playwright==1.58.0
+
+# ── OCR (debug / QR fallback) ─────────────────────────────────────────────────
+pytesseract==0.3.13
+
+# ── FastAPI web app ───────────────────────────────────────────────────────────
+fastapi==0.135.3
+uvicorn[standard]==0.44.0
+jinja2==3.1.6
+python-multipart==0.0.26
+
+# ── Production additions ──────────────────────────────────────────────────────
+pydantic-settings==2.13.1
+slowapi==0.1.9
+python-json-logger==4.1.0
+
+# Production WSGI/ASGI server (Linux/macOS only; use run_app.py on Windows dev)
+gunicorn==25.3.0

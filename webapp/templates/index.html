@@ -25,7 +25,7 @@
         <label for="template_id">Select layout</label>
         <select name="template_id" id="template_id">
           {% for tid, label in template_choices %}
-          <option value="{{ tid }}" {% if tid == 'Q100_5ch' %}selected{% endif %}>{{ label }}</option>
+          <option value="{{ tid }}" {% if tid == 'Q20_5ch' %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
       </div>

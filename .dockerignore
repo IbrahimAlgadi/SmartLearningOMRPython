@@ -1,0 +1,67 @@
+# ── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Virtual environments ─────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+ENV/
+
+# ── OMR run output (bind-mount instead) ──────────────────────────────────────
+web_runs/
+runs/
+
+# ── Debug detection output dirs ──────────────────────────────────────────────
+detect_v3_*/
+detect_v3_opt_*/
+detection/
+
+# ── Large training / dataset artefacts ───────────────────────────────────────
+dataset/
+dataset_v2/
+dataset_v2_preview/
+dataset_v2_preview2/
+dataset_v3/
+dataset_v3_test/
+models/
+*.pt
+*.pth
+# Keep the ONNX classifier — it is needed at runtime.
+# Override with a bind mount in production.
+# bubble_classifier_v3.onnx  ← intentionally NOT excluded
+
+# ── Test images ──────────────────────────────────────────────────────────────
+test_images/
+ans*.png
+ans*.jpg
+
+# ── Dev / log files ──────────────────────────────────────────────────────────
+*.log
+_tmp/
+.cursor/
+.git/
+.gitignore
+*.md
+*.pdf
+# HTML/PDF sheets under sheets/ are dev assets; webapp uses webapp/templates/
+*.html
+# JSON dumps elsewhere; data/bubble_coords/*.json must ship with the image
+*.json
+!data/bubble_coords/
+!data/bubble_coords/*.json
+result.json
+
+# ── IDE and OS ───────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
